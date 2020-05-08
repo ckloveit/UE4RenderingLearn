@@ -11,7 +11,21 @@
 #include "Public/Internationalization/Internationalization.h"  
 #include "Public/StaticBoundShaderState.h" 
 
+#include "RHICommandList.h"
+#include "UniformBuffer.h"
+
 #define LOCTEXT_NAMESPACE "TestShader"  
+
+// Uniform Buffer ---> DX11 Constant Buffer
+BEGIN_GLOBAL_SHADER_PARAMETER_STRUCT(FMyUniformStructData, )
+SHADER_PARAMETER(FVector4, ColorOne)
+SHADER_PARAMETER(FVector4, ColorTwo)
+SHADER_PARAMETER(FVector4, ColorThree)
+SHADER_PARAMETER(FVector4, ColorFour)
+SHADER_PARAMETER(uint32, ColorIndex)
+END_GLOBAL_SHADER_PARAMETER_STRUCT()
+IMPLEMENT_GLOBAL_SHADER_PARAMETER_STRUCT(FMyUniformStructData, "FMyUniform");
+
 
 struct FMyTextureVertex
 {
@@ -74,7 +88,8 @@ public:
 	void SetParameters(
 		FRHICommandListImmediate& RHICmdList,
 		const FLinearColor& MyColor,
-		FTextureRHIParamRef& MyTexture
+		FTextureRHIParamRef& MyTexture,
+		FMyShaderStructData& ShaderStructData
 	)
 	{
 		SetShaderValue(RHICmdList, GetPixelShader(), SimpleColorVal, MyColor);
@@ -84,6 +99,14 @@ public:
 			TestTextureSampler,
 			TStaticSamplerState<SF_Trilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI(),
 			MyTexture);
+		FMyUniformStructData UniformData;
+		UniformData.ColorOne = ShaderStructData.ColorOne;
+		UniformData.ColorTwo = ShaderStructData.ColorTwo;
+		UniformData.ColorThree = ShaderStructData.Colorthree;
+		UniformData.ColorFour = ShaderStructData.ColorFour;
+		UniformData.ColorIndex = ShaderStructData.ColorIndex;
+		UniformData.ColorIndex = ShaderStructData.ColorIndex;
+		SetUniformBufferParameterImmediate(RHICmdList, GetPixelShader(), GetUniformBufferParameter<FMyUniformStructData>(), UniformData);
 	}
 
 	virtual bool Serialize(FArchive& Ar) override
@@ -144,8 +167,9 @@ static void DrawTestShaderRenderTarget_RenderThread(
 	ERHIFeatureLevel::Type FeatureLevel,
 	FName TextureRenderTargetName,
 	FLinearColor MyColor,
-	FTextureRHIParamRef MyTexture
-)
+	FTextureRHIParamRef MyTexture,
+	FMyShaderStructData ShaderStructData
+	)
 {
 	check(IsInRenderingThread());
 #if WANTS_DRAW_MESH_EVENTS  
@@ -185,7 +209,7 @@ static void DrawTestShaderRenderTarget_RenderThread(
 	SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
 
 	//RHICmdList.SetViewport(0, 0, 0.0f, DrawTargetResolution.X, DrawTargetResolution.Y, 1.0f);  
-	PixelShader->SetParameters(RHICmdList, MyColor, MyTexture);
+	PixelShader->SetParameters(RHICmdList, MyColor, MyTexture, ShaderStructData);
 	// Draw grid.  
 	//uint32 PrimitiveCount = 2;  
 	//RHICmdList.DrawPrimitive(PT_TriangleList, 0, PrimitiveCount, 1);  
@@ -224,7 +248,8 @@ void UTestShaderBlueprintLibrary::DrawTestShaderRenderTarget(
 	class UTextureRenderTarget2D* OutputRenderTarget, 
 	AActor* Ac,
 	FLinearColor MyColor,
-	UTexture* MyTexture)
+	UTexture* MyTexture,
+	FMyShaderStructData ShaderStructData)
 {
 	check(IsInGameThread());
 
@@ -240,9 +265,9 @@ void UTestShaderBlueprintLibrary::DrawTestShaderRenderTarget(
 	FName TextureRenderTargetName = OutputRenderTarget->GetFName();
 
 	ENQUEUE_RENDER_COMMAND(CaptureCommand)(
-		[TextureRenderTargetResource, FeatureLevel, MyColor, TextureRenderTargetName, MyTextureRHI](FRHICommandListImmediate& RHICmdList)
+		[TextureRenderTargetResource, FeatureLevel, MyColor, TextureRenderTargetName, MyTextureRHI, ShaderStructData](FRHICommandListImmediate& RHICmdList)
 		{
-			DrawTestShaderRenderTarget_RenderThread(RHICmdList, TextureRenderTargetResource, FeatureLevel, TextureRenderTargetName, MyColor, MyTextureRHI);
+			DrawTestShaderRenderTarget_RenderThread(RHICmdList, TextureRenderTargetResource, FeatureLevel, TextureRenderTargetName, MyColor, MyTextureRHI, ShaderStructData);
 		}
 	);
 }
