@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+
+# ignore directory
+/LearnRenderingDemo/.vs/
+/LearnRenderingDemo/Binaries/
+/LearnRenderingDemo/DerivedDataCache/
+/LearnRenderingDemo/Intermediate/
+/LearnRenderingDemo/Saved/
+/LearnRenderingDemo/Content/StarterContent/

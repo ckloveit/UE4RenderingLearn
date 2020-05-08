@@ -1,0 +1,13 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{FEDD9E93-4EF6-C027-8129-46910BDBAC1D}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "LearnRenderingDemo",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
